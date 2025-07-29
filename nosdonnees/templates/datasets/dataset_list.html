@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Bases de données - Nosdonnées{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Filtres -->
+    <div class="col-lg-3 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-filter me-2"></i>Filtres
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="GET" action="{% url 'datasets:dataset_list' %}">
+                    {{ search_form.as_p }}
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-search me-2"></i>Filtrer
+                    </button>
+                    <a href="{% url 'datasets:dataset_list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        <i class="fas fa-times me-2"></i>Réinitialiser
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Liste des bases de données -->
+    <div class="col-lg-9">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1 class="h3 mb-0">
+                <i class="fas fa-database me-2"></i>Bases de données
+            </h1>
+            <span class="badge bg-primary">{{ page_obj.paginator.count }} résultat(s)</span>
+        </div>
+
+        {% if page_obj %}
+            <div class="row">
+                {% for dataset in page_obj %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">{{ dataset.title }}</h5>
+                                <span class="badge bg-primary">{{ dataset.get_file_format_display }}</span>
+                            </div>
+                            
+                            <p class="card-text text-muted">
+                                {{ dataset.short_description|default:dataset.description|truncatewords:25 }}
+                            </p>
+                            
+                            <div class="mb-3">
+                                <span class="badge bg-secondary me-1">{{ dataset.domain.name }}</span>
+                                {% for tag in dataset.get_tags_list|slice:":3" %}
+                                    <span class="badge bg-light text-dark me-1">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="row text-muted small mb-3">
+                                <div class="col-6">
+                                    <i class="fas fa-user me-1"></i>{{ dataset.author }}
+                                </div>
+                                <div class="col-6 text-end">
+                                    <i class="fas fa-calendar me-1"></i>{{ dataset.creation_date|date:"d/m/Y" }}
+                                </div>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div class="small text-muted">
+                                    <i class="fas fa-download me-1"></i>{{ dataset.download_count }}
+                                    <i class="fas fa-eye ms-3 me-1"></i>{{ dataset.view_count }}
+                                </div>
+                                <div>
+                                    <a href="{% url 'datasets:dataset_detail' dataset.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye me-1"></i>Voir
+                                    </a>
+                                    <a href="{% url 'datasets:dataset_download' dataset.pk %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-download me-1"></i>Télécharger
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Pagination des bases de données">
+                <ul class="pagination justify-content-center">
+                    {% if page_obj.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.domain %}&domain={{ request.GET.domain }}{% endif %}{% if request.GET.file_format %}&file_format={{ request.GET.file_format }}{% endif %}">
+                                <i class="fas fa-angle-double-left"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.domain %}&domain={{ request.GET.domain }}{% endif %}{% if request.GET.file_format %}&file_format={{ request.GET.file_format }}{% endif %}">
+                                <i class="fas fa-angle-left"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.domain %}&domain={{ request.GET.domain }}{% endif %}{% if request.GET.file_format %}&file_format={{ request.GET.file_format }}{% endif %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.domain %}&domain={{ request.GET.domain }}{% endif %}{% if request.GET.file_format %}&file_format={{ request.GET.file_format }}{% endif %}">
+                                <i class="fas fa-angle-right"></i>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if request.GET.q %}&q={{ request.GET.q }}{% endif %}{% if request.GET.domain %}&domain={{ request.GET.domain }}{% endif %}{% if request.GET.file_format %}&file_format={{ request.GET.file_format }}{% endif %}">
+                                <i class="fas fa-angle-double-right"></i>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Aucune base de données trouvée</h4>
+                <p class="text-muted">Essayez de modifier vos critères de recherche.</p>
+                <a href="{% url 'datasets:dataset_list' %}" class="btn btn-primary">
+                    <i class="fas fa-times me-2"></i>Réinitialiser les filtres
+                </a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

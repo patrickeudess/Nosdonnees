@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Bases de données - Nosdonnées{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-database me-2"></i>Bases de données
+        </h1>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="GET" action="{{ url_for('dataset_list') }}" class="row g-3">
+                    <div class="col-md-4">
+                        <label for="q" class="form-label">
+                            <i class="fas fa-search me-1"></i>Recherche
+                        </label>
+                        <input type="text" class="form-control" id="q" name="q" 
+                               value="{{ request.args.get('q', '') }}" placeholder="Mots-clés...">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="domain" class="form-label">
+                            <i class="fas fa-tags me-1"></i>Domaine
+                        </label>
+                        <select class="form-select" id="domain" name="domain">
+                            <option value="">Tous les domaines</option>
+                            {% for domain in domains %}
+                            <option value="{{ domain.id }}" 
+                                    {% if request.args.get('domain')|int == domain.id %}selected{% endif %}>
+                                {{ domain.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="file_format" class="form-label">
+                            <i class="fas fa-file me-1"></i>Format
+                        </label>
+                        <select class="form-select" id="file_format" name="file_format">
+                            <option value="">Tous les formats</option>
+                            <option value="csv" {% if request.args.get('file_format') == 'csv' %}selected{% endif %}>CSV</option>
+                            <option value="xlsx" {% if request.args.get('file_format') == 'xlsx' %}selected{% endif %}>XLSX</option>
+                            <option value="json" {% if request.args.get('file_format') == 'json' %}selected{% endif %}>JSON</option>
+                            <option value="xml" {% if request.args.get('file_format') == 'xml' %}selected{% endif %}>XML</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label class="form-label">&nbsp;</label>
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-filter me-1"></i>Filtrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Résultats -->
+<div class="row">
+    <div class="col-12">
+        {% if datasets.items %}
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <p class="mb-0 text-muted">
+                    {{ datasets.total }} base(s) de données trouvée(s)
+                </p>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-th-large me-1"></i>Grille
+                    </button>
+                    <button type="button" class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-list me-1"></i>Liste
+                    </button>
+                </div>
+            </div>
+            
+            <div class="row">
+                {% for dataset in datasets.items %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 dataset-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title">{{ dataset.title }}</h5>
+                                <span class="badge bg-primary">{{ dataset.file_format.upper() }}</span>
+                            </div>
+                            
+                            <p class="card-text text-muted">
+                                {{ dataset.short_description or dataset.description[:150] + '...' }}
+                            </p>
+                            
+                            <div class="mb-3">
+                                <small class="text-muted">
+                                    <i class="fas fa-user me-1"></i>{{ dataset.author }}
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-calendar me-1"></i>{{ dataset.creation_date.strftime('%d/%m/%Y') }}
+                                </small>
+                                <br>
+                                <small class="text-muted">
+                                    <i class="fas fa-tag me-1"></i>{{ dataset.domain.name }}
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex justify-content-between align-items-center">
+                                <div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-download me-1"></i>{{ dataset.download_count }}
+                                    </small>
+                                    <small class="text-muted ms-2">
+                                        <i class="fas fa-eye me-1"></i>{{ dataset.view_count }}
+                                    </small>
+                                </div>
+                                <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="fas fa-eye me-1"></i>Voir
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            
+            <!-- Pagination -->
+            {% if datasets.pages > 1 %}
+            <nav aria-label="Navigation des pages">
+                <ul class="pagination justify-content-center">
+                    {% if datasets.has_prev %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dataset_list', page=datasets.prev_num, **request.args) }}">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    {% for page_num in datasets.iter_pages() %}
+                        {% if page_num %}
+                            {% if page_num != datasets.page %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('dataset_list', page=page_num, **request.args) }}">
+                                    {{ page_num }}
+                                </a>
+                            </li>
+                            {% else %}
+                            <li class="page-item active">
+                                <span class="page-link">{{ page_num }}</span>
+                            </li>
+                            {% endif %}
+                        {% else %}
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if datasets.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="{{ url_for('dataset_list', page=datasets.next_num, **request.args) }}">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+            
+        {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">Aucune base de données trouvée</h4>
+                <p class="text-muted">
+                    Essayez de modifier vos critères de recherche ou 
+                    <a href="{{ url_for('dataset_list') }}">voir toutes les bases</a>
+                </p>
+            </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %} 

@@ -1,0 +1,152 @@
+{% extends "base.html" %}
+
+{% block title %}Validation - {{ dataset.title }} - Nosdonnées{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Validation</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">
+                        <i class="fas fa-clipboard-check me-2"></i>Validation de base de données
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <!-- Informations du dataset -->
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h5>{{ dataset.title }}</h5>
+                            <p class="text-muted">{{ dataset.description }}</p>
+                            
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <strong>Auteur:</strong> {{ dataset.author }}<br>
+                                    <strong>Domaine:</strong> <span class="badge bg-secondary">{{ dataset.domain.name }}</span><br>
+                                    <strong>Format:</strong> {{ dataset.file_format.upper() }}<br>
+                                    <strong>Taille:</strong> {{ (dataset.file_size / (1024*1024))|round(2) }} MB
+                                </div>
+                                <div class="col-md-6">
+                                    <strong>Date de soumission:</strong> {{ dataset.creation_date.strftime('%d/%m/%Y à %H:%M') }}<br>
+                                    <strong>Source:</strong> {{ dataset.source }}<br>
+                                    <strong>Mots-clés:</strong> {{ dataset.keywords or 'Aucun' }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="card bg-light">
+                                <div class="card-body">
+                                    <h6>Statut actuel</h6>
+                                    {% if dataset.status == 'pending' %}
+                                        <span class="badge bg-warning fs-6">
+                                            <i class="fas fa-clock me-1"></i>En attente
+                                        </span>
+                                    {% elif dataset.status == 'validated' %}
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-check me-1"></i>Validé
+                                        </span>
+                                    {% elif dataset.status == 'rejected' %}
+                                        <span class="badge bg-danger fs-6">
+                                            <i class="fas fa-times me-1"></i>Rejeté
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Documentation -->
+                    {% if dataset.documentation %}
+                    <div class="mb-4">
+                        <h6>Documentation</h6>
+                        <div class="card">
+                            <div class="card-body">
+                                <pre class="mb-0">{{ dataset.documentation }}</pre>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- Actions de validation -->
+                    {% if dataset.status == 'pending' %}
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="card border-success">
+                                <div class="card-header bg-success text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-check me-2"></i>Valider la base de données
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Cette action rendra la base de données visible et téléchargeable par tous les utilisateurs.</p>
+                                    <form method="POST" action="{{ url_for('validate_dataset', dataset_id=dataset.id) }}">
+                                        <button type="submit" class="btn btn-success">
+                                            <i class="fas fa-check me-2"></i>Valider
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="card border-danger">
+                                <div class="card-header bg-danger text-white">
+                                    <h6 class="mb-0">
+                                        <i class="fas fa-times me-2"></i>Rejeter la base de données
+                                    </h6>
+                                </div>
+                                <div class="card-body">
+                                    <p class="text-muted">Cette action rejettera la base de données. Un commentaire sera envoyé à l'auteur.</p>
+                                    <form method="POST" action="{{ url_for('reject_dataset', dataset_id=dataset.id) }}">
+                                        <div class="mb-3">
+                                            <label for="rejection_reason" class="form-label">Raison du rejet *</label>
+                                            <textarea class="form-control" id="rejection_reason" name="rejection_reason" 
+                                                      rows="4" placeholder="Expliquez pourquoi cette base de données est rejetée..." required></textarea>
+                                        </div>
+                                        <button type="submit" class="btn btn-danger">
+                                            <i class="fas fa-times me-2"></i>Rejeter
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Cette base de données a déjà été traitée ({{ dataset.status }}).
+                    </div>
+                    {% endif %}
+
+                    <!-- Informations sur le rejet -->
+                    {% if dataset.status == 'rejected' and dataset.rejection_reason %}
+                    <div class="mt-4">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-times me-2"></i>Raison du rejet
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-0">{{ dataset.rejection_reason }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

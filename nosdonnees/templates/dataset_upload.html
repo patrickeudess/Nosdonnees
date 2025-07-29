@@ -1,0 +1,214 @@
+{% extends "base.html" %}
+
+{% block title %}Proposer une base de données - Nosdonnées{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('home') }}">
+                        <i class="fas fa-home me-1"></i>Accueil
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a href="{{ url_for('dashboard') }}">
+                        <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+                    </a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">Proposer une base</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header">
+                <h2 class="mb-0">
+                    <i class="fas fa-upload me-2"></i>Proposer une base de données
+                </h2>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Important :</strong> Votre base de données sera soumise à validation par nos administrateurs avant publication.
+                </div>
+                
+                <form method="POST" enctype="multipart/form-data" id="upload-form">
+                    <!-- Informations de base -->
+                    <h4 class="mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Informations de base
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="mb-3">
+                                <label for="title" class="form-label">
+                                    <i class="fas fa-heading me-1"></i>Titre de la base de données *
+                                </label>
+                                <input type="text" class="form-control" id="title" name="title" 
+                                       placeholder="Ex: Données de santé publique 2024" required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4">
+                            <div class="mb-3">
+                                <label for="domain_id" class="form-label">
+                                    <i class="fas fa-tags me-1"></i>Domaine *
+                                </label>
+                                <select class="form-select" id="domain_id" name="domain_id" required>
+                                    <option value="">Sélectionner un domaine</option>
+                                    {% for domain in domains %}
+                                    <option value="{{ domain.id }}">{{ domain.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Description détaillée *
+                        </label>
+                        <textarea class="form-control" id="description" name="description" 
+                                  rows="4" placeholder="Décrivez le contenu de votre base de données, sa source, sa pertinence, les variables incluses..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="short_description" class="form-label">
+                            <i class="fas fa-align-left me-1"></i>Description courte (optionnel)
+                        </label>
+                        <textarea class="form-control" id="short_description" name="short_description" 
+                                  rows="2" placeholder="Résumé en quelques lignes pour l'affichage dans les listes"></textarea>
+                    </div>
+                    
+                    <!-- Informations contextuelles -->
+                    <h4 class="mb-3 mt-4">
+                        <i class="fas fa-search me-2"></i>Contexte et méthodologie
+                    </h4>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="source" class="form-label">
+                                    <i class="fas fa-database me-1"></i>Source des données *
+                                </label>
+                                <input type="text" class="form-control" id="source" name="source" 
+                                       placeholder="Ex: Ministère de la Santé, INSEE, etc." required>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="methodology" class="form-label">
+                                    <i class="fas fa-cogs me-1"></i>Méthodologie de collecte
+                                </label>
+                                <input type="text" class="form-control" id="methodology" name="methodology" 
+                                       placeholder="Ex: Enquête nationale, données administratives, etc.">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="geographic_scope" class="form-label">
+                                    <i class="fas fa-map-marker-alt me-1"></i>Périmètre géographique
+                                </label>
+                                <input type="text" class="form-control" id="geographic_scope" name="geographic_scope" 
+                                       placeholder="Ex: France métropolitaine, Région Île-de-France, etc.">
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="time_period" class="form-label">
+                                    <i class="fas fa-calendar me-1"></i>Période couverte
+                                </label>
+                                <input type="text" class="form-control" id="time_period" name="time_period" 
+                                       placeholder="Ex: 2020-2024, Année 2023, etc.">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="documentation" class="form-label">
+                            <i class="fas fa-book me-1"></i>Documentation et contexte *
+                        </label>
+                        <textarea class="form-control" id="documentation" name="documentation" 
+                                  rows="4" placeholder="Décrivez le contexte de création de cette base, les objectifs, les limitations, les variables importantes, les conditions d'utilisation..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="keywords" class="form-label">
+                            <i class="fas fa-tags me-1"></i>Mots-clés
+                        </label>
+                        <input type="text" class="form-control" id="keywords" name="keywords" 
+                               placeholder="Ex: santé, publique, indicateurs, 2024 (séparés par des virgules)">
+                    </div>
+                    
+                    <!-- Informations techniques -->
+                    <h4 class="mb-3 mt-4">
+                        <i class="fas fa-file-upload me-2"></i>Fichier à télécharger
+                    </h4>
+                    
+                    <div class="mb-3">
+                        <label for="file" class="form-label">
+                            <i class="fas fa-file me-1"></i>Fichier de données *
+                        </label>
+                        <input type="file" class="form-control" id="file" name="file" 
+                               accept=".csv,.xlsx,.xls,.json,.xml,.sql,.zip" required>
+                        <div class="form-text">
+                            Formats acceptés : CSV, Excel (XLSX/XLS), JSON, XML, SQL, ZIP (max 100MB)
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note :</strong> Assurez-vous que votre fichier ne contient pas de données personnelles sensibles et respecte les règles de confidentialité.
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="history.back()">
+                            <i class="fas fa-arrow-left me-1"></i>Annuler
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-upload me-1"></i>Soumettre la base
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('upload-form').addEventListener('submit', function(e) {
+    const fileInput = document.getElementById('file');
+    const file = fileInput.files[0];
+    
+    if (file && file.size > 100 * 1024 * 1024) { // 100MB
+        e.preventDefault();
+        alert('Le fichier est trop volumineux. Taille maximale : 100MB');
+        return;
+    }
+    
+    // Validation des champs obligatoires
+    const requiredFields = ['title', 'domain_id', 'description', 'source', 'documentation'];
+    for (let field of requiredFields) {
+        const element = document.getElementById(field);
+        if (!element.value.trim()) {
+            e.preventDefault();
+            alert('Veuillez remplir tous les champs obligatoires.');
+            element.focus();
+            return;
+        }
+    }
+});
+</script>
+{% endblock %} 
