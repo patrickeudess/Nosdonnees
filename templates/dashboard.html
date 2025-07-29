@@ -1,0 +1,791 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Nosdonnées{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Statistiques utilisateur -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-database fa-2x text-primary mb-2"></i>
+                <h3 class="card-title">{{ user_stats.total_datasets }}</h3>
+                <p class="card-text text-muted">Bases proposées</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                <h3 class="card-title">{{ user_stats.validated_datasets }}</h3>
+                <p class="card-text text-muted">Bases validées</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-download fa-2x text-info mb-2"></i>
+                <h3 class="card-title">{{ user_stats.total_downloads }}</h3>
+                <p class="card-text text-muted">Téléchargements</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="fas fa-star fa-2x text-warning mb-2"></i>
+                <h3 class="card-title">{{ user_stats.average_rating|default(0, true) }}/5</h3>
+                <p class="card-text text-muted">Note moyenne</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Onglets -->
+<ul class="nav nav-tabs" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="my-datasets-tab" data-bs-toggle="tab" 
+                data-bs-target="#my-datasets" type="button" role="tab">
+            <i class="fas fa-database me-2"></i>Mes bases de données
+        </button>
+    </li>
+    {% if current_user.role == 'admin' %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="pending-tab" data-bs-toggle="tab" 
+                data-bs-target="#pending" type="button" role="tab">
+            <i class="fas fa-clock me-2"></i>En attente de validation
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" 
+                data-bs-target="#stats" type="button" role="tab">
+            <i class="fas fa-chart-bar me-2"></i>Statistiques
+        </button>
+    </li>
+    {% endif %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="profile-tab" data-bs-toggle="tab" 
+                data-bs-target="#profile" type="button" role="tab">
+            <i class="fas fa-user me-2"></i>Mon profil
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="dashboardTabContent">
+    <!-- Mes bases de données -->
+    <div class="tab-pane fade show active" id="my-datasets" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-database me-2"></i>Mes bases de données
+                </h5>
+                <a href="{{ url_for('dataset_upload') }}" class="btn btn-primary btn-sm">
+                    <i class="fas fa-plus me-2"></i>Proposer une base
+                </a>
+            </div>
+            <div class="card-body">
+                {% if user_datasets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Domaine</th>
+                                <th>Statut</th>
+                                <th>Date</th>
+                                <th>Téléchargements</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in user_datasets %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}">
+                                        {{ dataset.title }}
+                                    </a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ dataset.domain.name }}</span>
+                                </td>
+                                <td>
+                                    {% if dataset.status == 'validated' %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-check me-1"></i>Validé
+                                    </span>
+                                    {% elif dataset.status == 'pending' %}
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-clock me-1"></i>En attente
+                                    </span>
+                                    {% elif dataset.status == 'rejected' %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-times me-1"></i>Rejeté
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ dataset.creation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>{{ dataset.download_count }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        {% if dataset.status == 'pending' or dataset.status == 'rejected' %}
+                                        <button class="btn btn-outline-danger btn-delete" 
+                                                data-dataset-id="{{ dataset.id }}">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        {% endif %}
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                    <h5 class="text-muted">Aucune base de données proposée</h5>
+                    <p class="text-muted">Commencez par proposer votre première base de données !</p>
+                    <a href="{{ url_for('dataset_upload') }}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Proposer une base
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if current_user.role == 'admin' %}
+    <!-- En attente de validation -->
+    <div class="tab-pane fade" id="pending" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-clock me-2"></i>Bases en attente de validation
+                    <span class="badge bg-warning ms-2">{{ pending_datasets|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if pending_datasets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Auteur</th>
+                                <th>Domaine</th>
+                                <th>Date</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in pending_datasets %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}">
+                                        {{ dataset.title }}
+                                    </a>
+                                </td>
+                                <td>{{ dataset.author }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ dataset.domain.name }}</span>
+                                </td>
+                                <td>{{ dataset.creation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-primary" title="Voir les détails">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('dataset_validation_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-info" title="Validation détaillée">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                        <button class="btn btn-success btn-validate-quick" 
+                                                data-dataset-id="{{ dataset.id }}" 
+                                                title="Valider rapidement">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-reject-quick" 
+                                                data-dataset-id="{{ dataset.id }}" 
+                                                title="Rejeter rapidement">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5">
+                    <i class="fas fa-check-circle fa-3x text-success mb-3"></i>
+                    <h5 class="text-success">Aucune base en attente</h5>
+                    <p class="text-muted">Toutes les bases ont été traitées !</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bases rejetées -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-times me-2"></i>Bases rejetées
+                    <span class="badge bg-danger ms-2">{{ rejected_datasets|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if rejected_datasets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Auteur</th>
+                                <th>Domaine</th>
+                                <th>Date de rejet</th>
+                                <th>Raison</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in rejected_datasets %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}">
+                                        {{ dataset.title }}
+                                    </a>
+                                </td>
+                                <td>{{ dataset.author }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ dataset.domain.name }}</span>
+                                </td>
+                                <td>{{ dataset.creation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    {% if dataset.rejection_reason %}
+                                        <span class="text-truncate d-inline-block" style="max-width: 200px;" 
+                                              title="{{ dataset.rejection_reason }}">
+                                            {{ dataset.rejection_reason[:50] }}{% if dataset.rejection_reason|length > 50 %}...{% endif %}
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Aucune raison</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-primary" title="Voir les détails">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                        <a href="{{ url_for('dataset_validation_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-info" title="Validation détaillée">
+                                            <i class="fas fa-clipboard-check"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-check-circle fa-2x text-success mb-2"></i>
+                    <p class="text-muted">Aucune base rejetée</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Bases validées récentes -->
+        <div class="card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-check me-2"></i>Bases validées récentes
+                    <span class="badge bg-success ms-2">{{ validated_datasets|length }}</span>
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if validated_datasets %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Titre</th>
+                                <th>Auteur</th>
+                                <th>Domaine</th>
+                                <th>Date de validation</th>
+                                <th>Téléchargements</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for dataset in validated_datasets %}
+                            <tr>
+                                <td>
+                                    <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}">
+                                        {{ dataset.title }}
+                                    </a>
+                                </td>
+                                <td>{{ dataset.author }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ dataset.domain.name }}</span>
+                                </td>
+                                <td>{{ dataset.creation_date.strftime('%d/%m/%Y') }}</td>
+                                <td>
+                                    <span class="badge bg-info">{{ dataset.download_count }}</span>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}" 
+                                           class="btn btn-outline-primary" title="Voir les détails">
+                                            <i class="fas fa-eye"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4">
+                    <i class="fas fa-database fa-2x text-muted mb-2"></i>
+                    <p class="text-muted">Aucune base validée récente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistiques -->
+    <div class="tab-pane fade" id="stats" role="tabpanel">
+        <div class="row mt-3">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-pie me-2"></i>Bases par domaine
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="domainChart"></canvas>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Évolution des téléchargements
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <canvas id="downloadChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-3">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-trophy me-2"></i>Top 10 des bases les plus téléchargées
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        {% if top_datasets %}
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Titre</th>
+                                        <th>Domaine</th>
+                                        <th>Téléchargements</th>
+                                        <th>Note</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for dataset in top_datasets %}
+                                    <tr>
+                                        <td>{{ loop.index }}</td>
+                                        <td>
+                                            <a href="{{ url_for('dataset_detail', dataset_id=dataset.id) }}">
+                                                {{ dataset.title }}
+                                            </a>
+                                        </td>
+                                        <td>{{ dataset.domain.name }}</td>
+                                        <td>{{ dataset.download_count }}</td>
+                                        <td>{{ dataset.rating|default(0, true) }}/5</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        {% else %}
+                        <p class="text-muted text-center">Aucune donnée disponible</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Mon profil -->
+    <div class="tab-pane fade" id="profile" role="tabpanel">
+        <div class="card mt-3">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-user me-2"></i>Mon profil
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('update_profile') }}">
+                    <!-- Informations de base -->
+                    <h6 class="text-primary mb-3">
+                        <i class="fas fa-info-circle me-2"></i>Informations de base
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Nom d'utilisateur *</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ current_user.username }}" required>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email *</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ current_user.email }}" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="organization" class="form-label">Organisation</label>
+                                <input type="text" class="form-control" id="organization" name="organization" 
+                                       value="{{ current_user.organization or '' }}" 
+                                       placeholder="Ex: Université de Paris, Ministère de la Santé...">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="phone" class="form-label">Téléphone</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ current_user.phone or '' }}" 
+                                       placeholder="+33 1 23 45 67 89">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="bio" class="form-label">Bio</label>
+                        <textarea class="form-control" id="bio" name="bio" rows="3" 
+                                  placeholder="Présentez-vous en quelques lignes...">{{ current_user.bio or '' }}</textarea>
+                    </div>
+                    
+                    <!-- Informations académiques -->
+                    <h6 class="text-primary mb-3 mt-4">
+                        <i class="fas fa-graduation-cap me-2"></i>Formation académique
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="education_level" class="form-label">Niveau d'études</label>
+                                <select class="form-select" id="education_level" name="education_level">
+                                    <option value="">Sélectionner un niveau</option>
+                                    <option value="Bac" {% if current_user.education_level == 'Bac' %}selected{% endif %}>Baccalauréat</option>
+                                    <option value="Licence" {% if current_user.education_level == 'Licence' %}selected{% endif %}>Licence</option>
+                                    <option value="Master" {% if current_user.education_level == 'Master' %}selected{% endif %}>Master</option>
+                                    <option value="Doctorat" {% if current_user.education_level == 'Doctorat' %}selected{% endif %}>Doctorat</option>
+                                    <option value="Autre" {% if current_user.education_level == 'Autre' %}selected{% endif %}>Autre</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="diploma" class="form-label">Diplôme obtenu</label>
+                                <input type="text" class="form-control" id="diploma" name="diploma" 
+                                       value="{{ current_user.diploma or '' }}" 
+                                       placeholder="Ex: Master en Sciences des Données">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="field_of_study" class="form-label">Domaine d'études</label>
+                                <input type="text" class="form-control" id="field_of_study" name="field_of_study" 
+                                       value="{{ current_user.field_of_study or '' }}" 
+                                       placeholder="Ex: Informatique, Statistiques, Économie...">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="institution" class="form-label">Établissement</label>
+                                <input type="text" class="form-control" id="institution" name="institution" 
+                                       value="{{ current_user.institution or '' }}" 
+                                       placeholder="Ex: Université de Paris, ENSAE...">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="graduation_year" class="form-label">Année d'obtention du diplôme</label>
+                        <input type="number" class="form-control" id="graduation_year" name="graduation_year" 
+                               value="{{ current_user.graduation_year or '' }}" 
+                               min="1950" max="2030" placeholder="Ex: 2023">
+                    </div>
+                    
+                    <!-- Informations professionnelles -->
+                    <h6 class="text-primary mb-3 mt-4">
+                        <i class="fas fa-briefcase me-2"></i>Informations professionnelles
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="job_title" class="form-label">Poste actuel</label>
+                                <input type="text" class="form-control" id="job_title" name="job_title" 
+                                       value="{{ current_user.job_title or '' }}" 
+                                       placeholder="Ex: Data Scientist, Chercheur, Analyste...">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="department" class="form-label">Département/Service</label>
+                                <input type="text" class="form-control" id="department" name="department" 
+                                       value="{{ current_user.department or '' }}" 
+                                       placeholder="Ex: R&D, Marketing, IT...">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="years_experience" class="form-label">Années d'expérience</label>
+                                <input type="number" class="form-control" id="years_experience" name="years_experience" 
+                                       value="{{ current_user.years_experience or '' }}" 
+                                       min="0" max="50" placeholder="Ex: 5">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="expertise_areas" class="form-label">Domaines d'expertise</label>
+                                <input type="text" class="form-control" id="expertise_areas" name="expertise_areas" 
+                                       value="{{ current_user.expertise_areas or '' }}" 
+                                       placeholder="Ex: Machine Learning, Statistiques, Visualisation...">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Informations de contact supplémentaires -->
+                    <h6 class="text-primary mb-3 mt-4">
+                        <i class="fas fa-link me-2"></i>Liens professionnels
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="linkedin" class="form-label">LinkedIn</label>
+                                <input type="url" class="form-control" id="linkedin" name="linkedin" 
+                                       value="{{ current_user.linkedin or '' }}" 
+                                       placeholder="https://linkedin.com/in/votre-profil">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="website" class="form-label">Site web personnel</label>
+                                <input type="url" class="form-control" id="website" name="website" 
+                                       value="{{ current_user.website or '' }}" 
+                                       placeholder="https://votre-site.com">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sécurité -->
+                    <h6 class="text-primary mb-3 mt-4">
+                        <i class="fas fa-lock me-2"></i>Sécurité
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="new_password" class="form-label">Nouveau mot de passe (optionnel)</label>
+                                <input type="password" class="form-control" id="new_password" name="new_password" 
+                                       placeholder="Laissez vide pour ne pas changer">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="confirm_password" class="form-label">Confirmer le mot de passe</label>
+                                <input type="password" class="form-control" id="confirm_password" name="confirm_password" 
+                                       placeholder="Confirmez le nouveau mot de passe">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Note :</strong> Ces informations nous aident à mieux connaître nos contributeurs et à améliorer la qualité des bases de données partagées.
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Mettre à jour mon profil
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Gestion des suppressions
+document.querySelectorAll('.btn-delete').forEach(button => {
+    button.addEventListener('click', function() {
+        const datasetId = this.dataset.datasetId;
+        if (confirm('Êtes-vous sûr de vouloir supprimer cette base de données ?')) {
+            // Ici on pourrait faire un appel AJAX pour supprimer
+            console.log('Suppression du dataset:', datasetId);
+        }
+    });
+});
+
+// Gestion des validations rapides (admin)
+document.querySelectorAll('.btn-validate-quick').forEach(button => {
+    button.addEventListener('click', function() {
+        const datasetId = this.dataset.datasetId;
+        if (confirm('Valider cette base de données ?')) {
+            // Créer un formulaire et le soumettre
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/validate_dataset/${datasetId}`;
+            document.body.appendChild(form);
+            form.submit();
+        }
+    });
+});
+
+// Gestion des rejets rapides (admin)
+document.querySelectorAll('.btn-reject-quick').forEach(button => {
+    button.addEventListener('click', function() {
+        const datasetId = this.dataset.datasetId;
+        const reason = prompt('Raison du rejet (obligatoire) :');
+        if (reason && reason.trim() !== '') {
+            // Créer un formulaire et le soumettre
+            const form = document.createElement('form');
+            form.method = 'POST';
+            form.action = `/admin/reject_dataset/${datasetId}`;
+            
+            const reasonInput = document.createElement('input');
+            reasonInput.type = 'hidden';
+            reasonInput.name = 'rejection_reason';
+            reasonInput.value = reason.trim();
+            
+            form.appendChild(reasonInput);
+            document.body.appendChild(form);
+            form.submit();
+        } else if (reason !== null) {
+            alert('La raison du rejet est obligatoire.');
+        }
+    });
+});
+
+// Gestion des validations (admin)
+document.querySelectorAll('.btn-validate').forEach(button => {
+    button.addEventListener('click', function() {
+        const datasetId = this.dataset.datasetId;
+        if (confirm('Valider cette base de données ?')) {
+            // Ici on pourrait faire un appel AJAX pour valider
+            console.log('Validation du dataset:', datasetId);
+        }
+    });
+});
+
+// Gestion des rejets (admin)
+document.querySelectorAll('.btn-reject').forEach(button => {
+    button.addEventListener('click', function() {
+        const datasetId = this.dataset.datasetId;
+        if (confirm('Rejeter cette base de données ?')) {
+            // Ici on pourrait faire un appel AJAX pour rejeter
+            console.log('Rejet du dataset:', datasetId);
+        }
+    });
+});
+
+// Charts pour les statistiques (admin)
+{% if current_user.role == 'admin' %}
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart.js pour les graphiques
+    if (typeof Chart !== 'undefined') {
+        // Graphique des domaines
+        const domainCtx = document.getElementById('domainChart');
+        if (domainCtx) {
+            new Chart(domainCtx, {
+                type: 'pie',
+                data: {
+                    labels: ['Santé', 'Éducation', 'Agriculture', 'Environnement', 'Économie'],
+                    datasets: [{
+                        data: [12, 19, 8, 15, 10],
+                        backgroundColor: [
+                            '#FF6384',
+                            '#36A2EB',
+                            '#FFCE56',
+                            '#4BC0C0',
+                            '#9966FF'
+                        ]
+                    }]
+                }
+            });
+        }
+        
+        // Graphique des téléchargements
+        const downloadCtx = document.getElementById('downloadChart');
+        if (downloadCtx) {
+            new Chart(downloadCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun'],
+                    datasets: [{
+                        label: 'Téléchargements',
+                        data: [65, 59, 80, 81, 56, 55],
+                        borderColor: '#36A2EB',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+{% endif %}
+</script>
+{% endblock %} 
